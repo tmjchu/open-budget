@@ -14,6 +14,7 @@ import lombok.experimental.Accessors;
 public class TransactionDO {
 
     private String transactionId;
+    private String pendingTransactionId;
     private String plaidItemId;
     private String accountId;
     private String accountName;

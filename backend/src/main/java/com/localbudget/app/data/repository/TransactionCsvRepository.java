@@ -33,7 +33,8 @@ public class TransactionCsvRepository extends CsvSupport {
         "payment_channel",
         "local_category_id",
         "custom_name",
-        "custom_date"
+        "custom_date",
+        "pending_transaction_id"
     };
 
     public TransactionCsvRepository(BudgetAppProperties properties) {
@@ -67,7 +68,8 @@ public class TransactionCsvRepository extends CsvSupport {
                                         value(record, "payment_channel"),
                                         value(record, "local_category_id"),
                                         value(record, "custom_name"),
-                                        value(record, "custom_date")))
+                                        value(record, "custom_date"),
+                                        value(record, "pending_transaction_id")))
                 .toList();
     }
 
@@ -106,7 +108,8 @@ public class TransactionCsvRepository extends CsvSupport {
                                                 value(record.paymentChannel()),
                                                 value(record.localCategoryId()),
                                                 value(record.customName()),
-                                                value(record.customDate())))
+                                                value(record.customDate()),
+                                                value(record.pendingTransactionId())))
                         .toList());
     }
 

@@ -66,8 +66,26 @@ public class TransactionService {
         int added = 0;
         int updated = 0;
         int unchanged = 0;
-        for (TransactionDO fetched : fetchedTransactions) {
+        // Process pending entries first so a posted replacement wins regardless of input order.
+        List<TransactionDO> ordered =
+                fetchedTransactions.stream()
+                        .sorted(Comparator.comparing(transaction -> !transaction.pending()))
+                        .toList();
+        for (TransactionDO fetched : ordered) {
+            if (fetched.pending()
+                    && merged.values().stream()
+                            .anyMatch(posted -> replacesPending(posted, fetched))) {
+                continue;
+            }
             TransactionDO existing = merged.get(fetched.transactionId());
+            TransactionDO pending = merged.get(fetched.pendingTransactionId());
+            boolean replacedPending = replacesPending(fetched, pending);
+            if (replacedPending) {
+                merged.remove(pending.transactionId());
+                if (existing == null) {
+                    existing = pending;
+                }
+            }
             TransactionDO candidate =
                     transactionServiceHelper
                             .preserveLocalEdits(fetched, existing)
@@ -75,7 +93,7 @@ public class TransactionService {
                                     transactionServiceHelper.defaultCategoryId(fetched));
             if (existing == null) {
                 added++;
-            } else if (!Objects.equals(existing, candidate)) {
+            } else if (replacedPending || !Objects.equals(existing, candidate)) {
                 updated++;
             } else {
                 unchanged++;
@@ -86,6 +104,17 @@ public class TransactionService {
         transactionRepository.writeAll(
                 merged.values().stream().map(transactionConverter::toCsv).toList());
         return new TransactionMergeResult(added, updated, unchanged);
+    }
+
+    private static boolean replacesPending(TransactionDO posted, TransactionDO pending) {
+        return pending != null
+                && pending.pending()
+                && !posted.pending()
+                && StringUtils.isNotBlank(posted.pendingTransactionId())
+                && posted.pendingTransactionId().equals(pending.transactionId())
+                && !posted.transactionId().equals(pending.transactionId())
+                && Objects.equals(posted.accountId(), pending.accountId())
+                && Objects.equals(posted.plaidItemId(), pending.plaidItemId());
     }
 
     public List<TransactionView> find(

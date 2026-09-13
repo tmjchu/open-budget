@@ -25,6 +25,13 @@ public class TransactionServiceHelper {
         }
         return TransactionDO.builder()
                 .transactionId(fetched.transactionId())
+                .pendingTransactionId(
+                        fetched.pendingTransactionId() != null
+                                        && !fetched.pendingTransactionId().isBlank()
+                                ? fetched.pendingTransactionId()
+                                : fetched.transactionId().equals(existing.transactionId())
+                                        ? existing.pendingTransactionId()
+                                        : null)
                 .plaidItemId(fetched.plaidItemId())
                 .accountId(fetched.accountId())
                 .accountName(fetched.accountName())

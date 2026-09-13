@@ -29,6 +29,7 @@ public class TransactionConverter {
 
         return TransactionDO.builder()
                 .transactionId(transaction.getTransactionId())
+                .pendingTransactionId(transaction.getPendingTransactionId())
                 .plaidItemId(plaidItem.plaidItemId())
                 .accountId(transaction.getAccountId())
                 .accountName(account == null ? null : account.name())
@@ -47,6 +48,7 @@ public class TransactionConverter {
     public TransactionDO fromCsv(TransactionCsvRecord transactionCsvRecord) {
         return TransactionDO.builder()
                 .transactionId(transactionCsvRecord.transactionId())
+                .pendingTransactionId(transactionCsvRecord.pendingTransactionId())
                 .plaidItemId(transactionCsvRecord.plaidItemId())
                 .accountId(transactionCsvRecord.accountId())
                 .accountName(transactionCsvRecord.accountName())
@@ -87,7 +89,8 @@ public class TransactionConverter {
                 transaction.paymentChannel(),
                 transaction.localCategoryId(),
                 transaction.customName(),
-                transaction.customDate() == null ? null : transaction.customDate().toString());
+                transaction.customDate() == null ? null : transaction.customDate().toString(),
+                transaction.pendingTransactionId());
     }
 
     public TransactionResponse toResponse(TransactionDO transaction, String categoryDisplayName) {

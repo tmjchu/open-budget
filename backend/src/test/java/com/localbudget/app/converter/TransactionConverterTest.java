@@ -41,6 +41,7 @@ class TransactionConverterTest {
                         plaidTransaction);
 
         assertThat(transaction.transactionId()).isEqualTo("txn-1");
+        assertThat(transaction.pendingTransactionId()).isNull();
         assertThat(transaction.plaidItemId()).isEqualTo("item-1");
         assertThat(transaction.accountName()).isEqualTo("Main Checking");
         assertThat(transaction.amount()).isEqualByComparingTo("12.34");
@@ -54,10 +55,11 @@ class TransactionConverterTest {
     }
 
     @Test
-    void plaidMappedDomainObjectCanBeConvertedToCsvRecord() {
+    void postedPlaidTransactionRoundTripsThroughCsvWithPendingLink() {
         Transaction plaidTransaction =
                 new Transaction()
                         .transactionId("txn-2")
+                        .pendingTransactionId("pending-2")
                         .accountId("acc-checking")
                         .date(LocalDate.parse("2026-06-29"))
                         .name("Paycheck")
@@ -71,9 +73,11 @@ class TransactionConverterTest {
                         TestFixtures.plaidItem(),
                         List.of(TestFixtures.checkingAccount()),
                         plaidTransaction);
+        assertThat(transaction.pendingTransactionId()).isEqualTo("pending-2");
         TransactionCsvRecord csvRecord = converter.toCsv(transaction);
 
         assertThat(csvRecord.transactionId()).isEqualTo("txn-2");
+        assertThat(csvRecord.pendingTransactionId()).isEqualTo("pending-2");
         assertThat(csvRecord.plaidItemId()).isEqualTo("item-1");
         assertThat(csvRecord.accountName()).isEqualTo("Main Checking");
         assertThat(new BigDecimal(csvRecord.amount())).isEqualByComparingTo("-2500.0");
@@ -83,6 +87,11 @@ class TransactionConverterTest {
         assertThat(csvRecord.localCategoryId()).isNull();
         assertThat(csvRecord.customName()).isNull();
         assertThat(csvRecord.customDate()).isNull();
+
+        TransactionDO restored = converter.fromCsv(csvRecord);
+        assertThat(restored.pendingTransactionId()).isEqualTo("pending-2");
+        assertThat(restored.transactionId()).isEqualTo("txn-2");
+        assertThat(restored.pending()).isFalse();
     }
 
     @Test
@@ -109,6 +118,7 @@ class TransactionConverterTest {
 
         TransactionDO transaction = converter.fromCsv(csvRecord);
 
+        assertThat(transaction.pendingTransactionId()).isNull();
         assertThat(transaction.localCategory()).isEqualTo("Dining & Drinks");
         assertThat(transaction.localCategoryId()).isEqualTo("dining-drinks");
         assertThat(transaction.customName()).isEqualTo("Custom coffee");
